@@ -15,7 +15,7 @@ class PreviewScreen extends StatefulWidget {
 
   final AgoraRoomInfo roomInfo;
 
-  static const routeName = '/previewScreen';
+  static const routeName = '/preview';
 
   @override
   State<PreviewScreen> createState() => _PreviewScreenState();
@@ -164,7 +164,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('$e'),
+            ),
+          ),
         );
       }
     }
@@ -177,7 +184,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('$e'),
+            ),
+          ),
         );
       }
       return false;
@@ -190,7 +204,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('$e'),
+            ),
+          ),
         );
       }
     }
@@ -203,7 +224,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('$e'),
+            ),
+          ),
         );
       }
       return false;
@@ -211,11 +239,19 @@ class _PreviewScreenState extends State<PreviewScreen> {
   }
 
   void _onJoin(StreamingState state) async {
-    bool isAvailableToNavigate = true;
     if (state.isCameraOn) {
-      isAvailableToNavigate = await _onCloseVideo(state);
+      final isSuccess = await _onCloseVideo(state);
+      if (!isSuccess) {
+        return;
+      }
     }
-    if (mounted && isAvailableToNavigate) {
+    if (state.isMicroOn) {
+      final isSuccess = await _onCloseMicrophone(state);
+      if (!isSuccess) {
+        return;
+      }
+    }
+    if (mounted) {
       _navigateBack = false;
       context.pushReplacement(
         StreamingScreen.routeName,

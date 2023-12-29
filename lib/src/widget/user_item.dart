@@ -21,7 +21,11 @@ class UserItem extends StatelessWidget {
         children: [
           CircleAvatar(
             backgroundColor: Theme.of(context).primaryColor,
-            child: Center(child: Text(AppUtils.getDisplayUserName(user))),
+            child: Center(
+              child: Text(
+                AppUtils.getDisplayUserName(user, onlyFirstChar: true),
+              ),
+            ),
           ),
           const Gap(16),
           Expanded(

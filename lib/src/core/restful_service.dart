@@ -34,6 +34,14 @@ abstract class AbstractRestfulService {
     Map<String, String>? queryParameters,
   });
 
+  Future<dynamic> patchWithMedia(
+    String api, {
+    Map<String, String>? headers,
+    Map<String, String>? body,
+    Map<String, String>? queryParameters,
+    required List<String> mediasPath,
+  });
+
   Future<dynamic> delete(
     String api, {
     Map<String, String>? headers,

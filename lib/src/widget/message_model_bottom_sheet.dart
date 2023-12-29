@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 import 'package:meet_us/src/state/message_state.dart';
 import 'package:meet_us/src/widget/message_item.dart';
 import 'package:provider/provider.dart';
@@ -23,17 +22,16 @@ class _MessageModelBottomSheetState extends State<MessageModelBottomSheet> {
     final messages = messagesState.messagesByRoomId(widget.roomId);
     return Column(
       children: [
-        const Gap(8.0),
         Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24.0),
             color: Colors.grey,
           ),
           clipBehavior: Clip.hardEdge,
+          margin: const EdgeInsets.symmetric(vertical: 16.0),
           width: MediaQuery.sizeOf(context).width / 3,
           height: 4.0,
         ),
-        const Gap(8.0),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -56,6 +54,9 @@ class _MessageModelBottomSheetState extends State<MessageModelBottomSheet> {
           child: TextField(
             controller: msgController,
             decoration: InputDecoration(
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15.0),
+              ),
               hintText: 'Send message',
               filled: true,
               fillColor: const Color(0xFFE8E9EB),
@@ -63,7 +64,6 @@ class _MessageModelBottomSheetState extends State<MessageModelBottomSheet> {
                 onPressed: () => _sendMessage(context),
                 icon: const Icon(Icons.send_outlined),
               ),
-              border: const OutlineInputBorder(),
             ),
           ),
         )

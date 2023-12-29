@@ -6,18 +6,50 @@ import 'package:flutter/material.dart';
 import 'package:meet_us/src/core/enum.dart';
 import 'package:meet_us/src/entity/agora_room_info.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
+import 'package:meet_us/src/entity/request_join_room_user.dart';
+import 'package:meet_us/src/service/socket_service.dart';
 
 class StreamingState extends ChangeNotifier {
+  final SocketService _socketService;
+
+  StreamingState(this._socketService) {
+    _socketService.onReceiveRequestJoinRoom = _onReceiveRequestJoinRoom;
+  }
+
+  ChannelMediaOptions get _shareScreenChannelMediaOptions =>
+      const ChannelMediaOptions(
+        publishCameraTrack: false,
+        publishMicrophoneTrack: true,
+        publishScreenTrack: true,
+        publishScreenCaptureAudio: false,
+        publishScreenCaptureVideo: true,
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+      );
+
+  ChannelMediaOptions get _videoCallChannelMediaOptions =>
+      const ChannelMediaOptions(
+        publishCameraTrack: true,
+        publishMicrophoneTrack: true,
+        publishScreenTrack: false,
+        publishScreenCaptureAudio: false,
+        publishScreenCaptureVideo: false,
+        autoSubscribeVideo: true,
+        autoSubscribeAudio: true,
+      );
+
   RoomConnectionStatus _connectionStatus = RoomConnectionStatus.disconnected;
   RoomConnectionStatus get connectionStatus => _connectionStatus;
-  bool get isMicroOn => _ownUser.isMicroOn;
-  bool get isCameraOn => _ownUser.isCameraOn;
 
   AgoraUser _ownUser =
       const AgoraUser(id: 0, isCameraOn: false, isMicroOn: false);
   AgoraUser get ownUser => _ownUser;
-  int? _mostActiveUserUid;
-  int? get mostActiveUserUid => _mostActiveUserUid;
+  bool get isMicroOn => _ownUser.isMicroOn;
+  bool get isCameraOn => _ownUser.isCameraOn;
+  bool _isShareScreen = false;
+  bool get isShareScreen => _isShareScreen;
+  int? _pinnedUserId;
+  int? get pinnedUserId => _pinnedUserId;
 
   // RTC engine
   RtcEngine? _agoraEngine;
@@ -28,9 +60,14 @@ class StreamingState extends ChangeNotifier {
 
   RtcEngineEventHandler? _eventHandler;
 
-  final _users = <AgoraUser>[];
-  UnmodifiableListView<AgoraUser> get users =>
-      UnmodifiableListView<AgoraUser>(_users);
+  Map<int, AgoraUser> _users = <int, AgoraUser>{};
+  UnmodifiableMapView<int, AgoraUser> get users =>
+      UnmodifiableMapView<int, AgoraUser>(_users);
+
+  // Map<int, RequestJoinRoomUser> _requestJoinRoomUsers =
+  //     <int, RequestJoinRoomUser>{};
+  // UnmodifiableMapView<int, RequestJoinRoomUser> get requestJoinRoomUsers =>
+  //     UnmodifiableMapView<int, RequestJoinRoomUser>(_requestJoinRoomUsers);
 
   Future<void> setupVideoSDKEngine(
     AgoraRoomInfo roomInfo,
@@ -59,7 +96,7 @@ class StreamingState extends ChangeNotifier {
       onRejoinChannelSuccess: _onRejoinChannelSuccess,
       onUserJoined: _onUserJoined,
       onUserOffline: _onUserOffline,
-      onActiveSpeaker: _onActiveSpeaker,
+      onLocalVideoStateChanged: _onLocalVideoStateChanged,
       onRemoteVideoStateChanged: _onRemoteVideoStateChanged,
       onRemoteAudioStateChanged: _onRemoteAudioStateChanged,
     );
@@ -82,9 +119,10 @@ class StreamingState extends ChangeNotifier {
   }
 
   void _onUserJoined(RtcConnection connection, int remoteUid, int elapsed) {
-    _users.add(
-      AgoraUser(id: remoteUid, isCameraOn: false, isMicroOn: false),
-    );
+    final newUsers = Map<int, AgoraUser>.from(_users);
+    newUsers[remoteUid] =
+        AgoraUser(id: remoteUid, isCameraOn: false, isMicroOn: false);
+    _users = newUsers;
     notifyListeners();
   }
 
@@ -93,13 +131,34 @@ class StreamingState extends ChangeNotifier {
     int remoteUid,
     UserOfflineReasonType reason,
   ) {
-    _users.removeWhere((element) => element.id == remoteUid);
+    final newUsers = Map<int, AgoraUser>.from(_users);
+    newUsers.remove(remoteUid);
+    _users = newUsers;
     notifyListeners();
   }
 
-  void _onActiveSpeaker(RtcConnection connection, int remoteUid) {
-    _mostActiveUserUid = remoteUid;
-    notifyListeners();
+  void _onLocalVideoStateChanged(
+    VideoSourceType sourceType,
+    LocalVideoStreamState state,
+    LocalVideoStreamError err,
+  ) {
+    if (sourceType.value() == VideoSourceType.videoSourceScreen.value()) {
+      switch (state) {
+        case LocalVideoStreamState.localVideoStreamStateCapturing:
+          break;
+        case LocalVideoStreamState.localVideoStreamStateEncoding:
+          _isShareScreen = true;
+          notifyListeners();
+          break;
+        case LocalVideoStreamState.localVideoStreamStateStopped:
+          _isShareScreen = false;
+          notifyListeners();
+          break;
+        case LocalVideoStreamState.localVideoStreamStateFailed:
+          _agoraEngine!.stopScreenCapture();
+          break;
+      }
+    }
   }
 
   void _onRemoteVideoStateChanged(
@@ -109,17 +168,19 @@ class StreamingState extends ChangeNotifier {
     RemoteVideoStateReason reason,
     int elapsed,
   ) {
-    for (int i = 0; i < _users.length; i++) {
-      if (_users[i].id != remoteUid) {
-        continue;
-      }
-      final user = _users[i].copyWith(
-        isCameraOn: ![
-          RemoteVideoState.remoteVideoStateStopped,
-          RemoteVideoState.remoteVideoStateFailed
-        ].contains(state),
-      );
-      _users[i] = user;
+    final isCameraOn = ![
+      RemoteVideoState.remoteVideoStateStopped,
+      RemoteVideoState.remoteVideoStateFailed,
+    ].contains(state);
+    final agoraUser = AgoraUser(
+      id: remoteUid,
+      isCameraOn: isCameraOn,
+      isMicroOn: _users[remoteUid]?.isMicroOn ?? false,
+    );
+    if (agoraUser != _users[remoteUid]) {
+      final newUsers = Map<int, AgoraUser>.from(_users);
+      newUsers[remoteUid] = agoraUser;
+      _users = newUsers;
       notifyListeners();
     }
   }
@@ -131,19 +192,46 @@ class StreamingState extends ChangeNotifier {
     RemoteAudioStateReason reason,
     int elapsed,
   ) {
-    for (int i = 0; i < _users.length; i++) {
-      if (_users[i].id != remoteUid) {
-        continue;
-      }
-      final user = _users[i].copyWith(
-        isMicroOn: ![
-          RemoteAudioState.remoteAudioStateStopped,
-          RemoteAudioState.remoteAudioStateFailed,
-        ].contains(state),
-      );
-      _users[i] = user;
+    final isMicroOn = ![
+      RemoteAudioState.remoteAudioStateStopped,
+      RemoteAudioState.remoteAudioStateFailed,
+    ].contains(state);
+    final agoraUser = AgoraUser(
+      id: remoteUid,
+      isCameraOn: _users[remoteUid]?.isCameraOn ?? false,
+      isMicroOn: isMicroOn,
+    );
+    if (agoraUser != _users[remoteUid]) {
+      final newUsers = Map<int, AgoraUser>.from(_users);
+      newUsers[remoteUid] = agoraUser;
+      _users = newUsers;
       notifyListeners();
     }
+  }
+
+  void _onReceiveRequestJoinRoom(dynamic value) {
+    // final userId = value['uid']! as int;
+    // final statusString = (value['status'] as String?) ?? '';
+    // RequestJoinRoomStatus status = RequestJoinRoomStatus.unknown;
+    // switch (statusString) {
+    //   case 'APPROVED':
+    //     status = RequestJoinRoomStatus.approved;
+    //     break;
+    //   case 'WAITING':
+    //     status = RequestJoinRoomStatus.waiting;
+    //     break;
+    //   case 'DECLINE':
+    //     status = RequestJoinRoomStatus.decline;
+    //     break;
+    // }
+    // final requestUser = RequestJoinRoomUser(
+    //   id: userId,
+    //   requestJoinRoomStatus: status,
+    // );
+    // final mapUser = Map<int, RequestJoinRoomUser>.from(_requestJoinRoomUsers);
+    // mapUser[requestUser.id] = requestUser;
+    // _requestJoinRoomUsers = mapUser;
+    // notifyListeners();
   }
 
   Future<void> joinRoom() async {
@@ -152,6 +240,13 @@ class StreamingState extends ChangeNotifier {
     const options = ChannelMediaOptions(
       clientRoleType: ClientRoleType.clientRoleBroadcaster,
       channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+      publishCameraTrack: true,
+      publishMicrophoneTrack: true,
+      publishScreenTrack: false,
+      publishScreenCaptureAudio: false,
+      publishScreenCaptureVideo: false,
+      autoSubscribeVideo: true,
+      autoSubscribeAudio: true,
     );
     await _agoraEngine!.joinChannel(
       token: _agoraRoomInfo!.token,
@@ -159,10 +254,18 @@ class StreamingState extends ChangeNotifier {
       options: options,
       uid: _ownUser.id,
     );
-    await _agoraEngine!.enableLocalAudio(false);
   }
 
   Future<void> endCall() async {
+    if (isCameraOn) {
+      await onCloseCamera();
+    }
+    if (isMicroOn) {
+      await onCloseMicrophone();
+    }
+    if (_isShareScreen) {
+      await onStopScreenCapture();
+    }
     await _agoraEngine?.leaveChannel();
     await _agoraEngine?.release();
     _ownUser = const AgoraUser(id: 0, isCameraOn: false, isMicroOn: false);
@@ -170,10 +273,13 @@ class StreamingState extends ChangeNotifier {
     _connectionStatus = RoomConnectionStatus.disconnected;
     _agoraRoomInfo = null;
     _ownUser = _ownUser.copyWith(isCameraOn: false, isMicroOn: false);
-    _mostActiveUserUid = null;
+    _pinnedUserId = null;
   }
 
   Future<void> endPreview() async {
+    if (_agoraEngine == null) {
+      return;
+    }
     if (isCameraOn) {
       onClosePreviewCamera();
     }
@@ -205,10 +311,12 @@ class StreamingState extends ChangeNotifier {
   }
 
   Future<void> onOpenCamera() async {
-    if (_agoraEngine == null) {
+    if (_agoraEngine == null || _isShareScreen) {
       return;
     }
     await _agoraEngine!.enableLocalVideo(true);
+    await _agoraEngine!
+        .updateChannelMediaOptions(_videoCallChannelMediaOptions);
     _ownUser = _ownUser.copyWith(isCameraOn: true);
     notifyListeners();
   }
@@ -237,6 +345,48 @@ class StreamingState extends ChangeNotifier {
     }
     await _agoraEngine!.enableLocalAudio(false);
     _ownUser = _ownUser.copyWith(isMicroOn: false);
+    notifyListeners();
+  }
+
+  Future<void> onStartScreenCapture() async {
+    if (_agoraEngine == null) {
+      return;
+    }
+    await _agoraEngine!.startScreenCapture(
+      const ScreenCaptureParameters2(
+        captureAudio: true,
+        audioParams: ScreenAudioParameters(
+          sampleRate: 16000,
+          channels: 2,
+          captureSignalVolume: 100,
+        ),
+        captureVideo: true,
+        videoParams: ScreenVideoParameters(
+          dimensions: VideoDimensions(height: 1280, width: 720),
+          frameRate: 15,
+          bitrate: 600,
+        ),
+      ),
+    );
+    await _agoraEngine!
+        .updateChannelMediaOptions(_shareScreenChannelMediaOptions);
+    await onCloseCamera();
+  }
+
+  Future<void> onStopScreenCapture() async {
+    if (_agoraEngine == null) {
+      return;
+    }
+    await _agoraEngine!.stopScreenCapture();
+  }
+
+  void pinUser(AgoraUser user) {
+    _pinnedUserId = user.id;
+    notifyListeners();
+  }
+
+  void unPinUser(AgoraUser user) {
+    _pinnedUserId = null;
     notifyListeners();
   }
 }

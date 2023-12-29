@@ -17,10 +17,13 @@ class AppUtils {
     return (email == null) ? false : RegExp(pattern).hasMatch(email);
   }
 
-  static String getDisplayUserName(User? user) {
+  static String getDisplayUserName(User? user, {bool onlyFirstChar = false}) {
     String name = 'N/A';
-    if (user != null && user.email.isNotEmpty) {
-      name = user.email[0].toUpperCase();
+    if (user != null) {
+      if (user.name.isNotEmpty) {
+        return onlyFirstChar ? user.name[0].toUpperCase() : user.name;
+      }
+      name = onlyFirstChar ? user.email[0].toUpperCase() : user.email;
     }
     return name;
   }

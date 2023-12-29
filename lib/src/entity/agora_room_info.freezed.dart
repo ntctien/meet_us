@@ -14,12 +14,20 @@ T _$identity<T>(T value) => value;
 final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
+AgoraRoomInfo _$AgoraRoomInfoFromJson(Map<String, dynamic> json) {
+  return _AgoraRoomInfo.fromJson(json);
+}
+
 /// @nodoc
 mixin _$AgoraRoomInfo {
+  @JsonKey(name: 'appId')
   String get appId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'code')
   String get channelName => throw _privateConstructorUsedError;
+  @JsonKey(name: 'rtcToken')
   String get token => throw _privateConstructorUsedError;
 
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
   $AgoraRoomInfoCopyWith<AgoraRoomInfo> get copyWith =>
       throw _privateConstructorUsedError;
@@ -31,7 +39,10 @@ abstract class $AgoraRoomInfoCopyWith<$Res> {
           AgoraRoomInfo value, $Res Function(AgoraRoomInfo) then) =
       _$AgoraRoomInfoCopyWithImpl<$Res, AgoraRoomInfo>;
   @useResult
-  $Res call({String appId, String channelName, String token});
+  $Res call(
+      {@JsonKey(name: 'appId') String appId,
+      @JsonKey(name: 'code') String channelName,
+      @JsonKey(name: 'rtcToken') String token});
 }
 
 /// @nodoc
@@ -76,7 +87,10 @@ abstract class _$$AgoraRoomInfoImplCopyWith<$Res>
       __$$AgoraRoomInfoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String appId, String channelName, String token});
+  $Res call(
+      {@JsonKey(name: 'appId') String appId,
+      @JsonKey(name: 'code') String channelName,
+      @JsonKey(name: 'rtcToken') String token});
 }
 
 /// @nodoc
@@ -112,16 +126,24 @@ class __$$AgoraRoomInfoImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-
+@JsonSerializable()
 class _$AgoraRoomInfoImpl implements _AgoraRoomInfo {
   const _$AgoraRoomInfoImpl(
-      {required this.appId, required this.channelName, required this.token});
+      {@JsonKey(name: 'appId') this.appId = '',
+      @JsonKey(name: 'code') this.channelName = '',
+      @JsonKey(name: 'rtcToken') this.token = ''});
+
+  factory _$AgoraRoomInfoImpl.fromJson(Map<String, dynamic> json) =>
+      _$$AgoraRoomInfoImplFromJson(json);
 
   @override
+  @JsonKey(name: 'appId')
   final String appId;
   @override
+  @JsonKey(name: 'code')
   final String channelName;
   @override
+  @JsonKey(name: 'rtcToken')
   final String token;
 
   @override
@@ -140,6 +162,7 @@ class _$AgoraRoomInfoImpl implements _AgoraRoomInfo {
             (identical(other.token, token) || other.token == token));
   }
 
+  @JsonKey(ignore: true)
   @override
   int get hashCode => Object.hash(runtimeType, appId, channelName, token);
 
@@ -148,19 +171,32 @@ class _$AgoraRoomInfoImpl implements _AgoraRoomInfo {
   @pragma('vm:prefer-inline')
   _$$AgoraRoomInfoImplCopyWith<_$AgoraRoomInfoImpl> get copyWith =>
       __$$AgoraRoomInfoImplCopyWithImpl<_$AgoraRoomInfoImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$AgoraRoomInfoImplToJson(
+      this,
+    );
+  }
 }
 
 abstract class _AgoraRoomInfo implements AgoraRoomInfo {
   const factory _AgoraRoomInfo(
-      {required final String appId,
-      required final String channelName,
-      required final String token}) = _$AgoraRoomInfoImpl;
+      {@JsonKey(name: 'appId') final String appId,
+      @JsonKey(name: 'code') final String channelName,
+      @JsonKey(name: 'rtcToken') final String token}) = _$AgoraRoomInfoImpl;
+
+  factory _AgoraRoomInfo.fromJson(Map<String, dynamic> json) =
+      _$AgoraRoomInfoImpl.fromJson;
 
   @override
+  @JsonKey(name: 'appId')
   String get appId;
   @override
+  @JsonKey(name: 'code')
   String get channelName;
   @override
+  @JsonKey(name: 'rtcToken')
   String get token;
   @override
   @JsonKey(ignore: true)

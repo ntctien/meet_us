@@ -6,12 +6,13 @@ import 'package:meet_us/src/screens/home_screen.dart';
 import 'package:meet_us/src/state/message_state.dart';
 import 'package:meet_us/src/state/users_state.dart';
 import 'package:meet_us/src/utils/app_utils.dart';
+import 'package:meet_us/src/widget/dialog_utils.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
-  static const String routeName = '/loginScreen';
+  static const String routeName = '/login';
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -22,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _obscureText = ValueNotifier<bool>(true);
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +38,13 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(),
-              Image.asset(
-                'assets/images/app_icon.png',
-                width: 150.0,
-                height: 150.0,
+              Hero(
+                tag: 'app_icon',
+                child: Image.asset(
+                  'assets/images/app_icon.png',
+                  width: 150.0,
+                  height: 150.0,
+                ),
               ),
               const Gap(24.0),
               Text(
@@ -65,19 +70,33 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const Gap(16.0),
-              Form(
-                key: _passwordKey,
-                child: TextFormField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15.0),
+              ValueListenableBuilder<bool>(
+                valueListenable: _obscureText,
+                builder: (context, obscureText, _) {
+                  return Form(
+                    key: _passwordKey,
+                    child: TextFormField(
+                      controller: _passwordController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15.0),
+                        ),
+                        hintText: 'Password',
+                        suffixIcon: IconButton(
+                          onPressed: () =>
+                              _obscureText.value = !_obscureText.value,
+                          icon: Icon(
+                            obscureText
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                        ),
+                      ),
+                      obscureText: obscureText,
+                      validator: _passwordValidator,
                     ),
-                    hintText: 'Password',
-                  ),
-                  obscureText: true,
-                  validator: _passwordValidator,
-                ),
+                  );
+                },
               ),
               const Gap(24.0),
               FilledButton(onPressed: _onSignIn, child: const Text('Sign In')),
@@ -124,6 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _onSignIn() async {
+    AppUtils.dismissFocusNode(context);
     if (!(_emailKey.currentState?.validate() ?? false) ||
         !(_passwordKey.currentState?.validate() ?? false)) {
       return;
@@ -131,21 +151,35 @@ class _LoginScreenState extends State<LoginScreen> {
     final userState = context.read<UsersState>();
     final messageState = context.read<MessageState>();
     try {
+      DialogUtils.showLoading(context);
       await userState.login(_emailController.text, _passwordController.text);
+      DialogUtils.dismissLoading();
       if (mounted) {
-        messageState.initializeSocket(_emailController.text);
+        messageState.initializeSocket(
+          userState.user!.token,
+          userState.user!.displayName,
+        );
         context.go(HomeScreen.routeName);
       }
     } catch (e) {
+      DialogUtils.dismissLoading();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e')),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.red,
+            content: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text('Sign In Failed: $e'),
+            ),
+          ),
         );
       }
     }
   }
 
   void _onCreateAccount() {
+    AppUtils.dismissFocusNode(context);
     context.go('${LoginScreen.routeName}/${CreateAccountScreen.routeName}');
   }
 }

@@ -13,7 +13,7 @@ class Message with _$Message {
   factory Message.fromJson(Map<String, Object?> json) {
     return Message(
       content: '${json['message'] ?? ''}',
-      name: '${json['user'] ?? 'N/A'}',
+      name: '${json['username'] ?? 'N/A'}',
       representedColorCode: json['color'] == null ? null : '${json['color']}',
     );
   }
