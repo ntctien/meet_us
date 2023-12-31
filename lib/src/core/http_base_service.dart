@@ -11,7 +11,7 @@ class HttpBaseService extends AbstractRestfulService {
     String api,
     Map<String, String>? queryParameters,
   ) {
-    return Uri.http(_domain, api, queryParameters);
+    return Uri.https(_domain, api, queryParameters);
   }
 
   bool isSuccess(int statusCode) => statusCode == 200 || statusCode == 201;

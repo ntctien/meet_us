@@ -32,7 +32,7 @@ mixin _$ScheduleRoom {
   int get hostId => throw _privateConstructorUsedError;
   @JsonKey(name: 'title')
   String get title => throw _privateConstructorUsedError;
-  @JsonKey(name: 'users')
+  @JsonKey(name: 'listParticipant')
   List<User> get users => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -54,7 +54,7 @@ abstract class $ScheduleRoomCopyWith<$Res> {
       @JsonKey(name: 'endTime') DateTime endTime,
       @JsonKey(name: 'hostId') int hostId,
       @JsonKey(name: 'title') String title,
-      @JsonKey(name: 'users') List<User> users});
+      @JsonKey(name: 'listParticipant') List<User> users});
 }
 
 /// @nodoc
@@ -126,7 +126,7 @@ abstract class _$$ScheduleRoomImplCopyWith<$Res>
       @JsonKey(name: 'endTime') DateTime endTime,
       @JsonKey(name: 'hostId') int hostId,
       @JsonKey(name: 'title') String title,
-      @JsonKey(name: 'users') List<User> users});
+      @JsonKey(name: 'listParticipant') List<User> users});
 }
 
 /// @nodoc
@@ -191,7 +191,7 @@ class _$ScheduleRoomImpl extends _ScheduleRoom {
       @JsonKey(name: 'endTime') this.endTime,
       @JsonKey(name: 'hostId') this.hostId,
       {@JsonKey(name: 'title') this.title = '',
-      @JsonKey(name: 'users') final List<User> users = const []})
+      @JsonKey(name: 'listParticipant') final List<User> users = const []})
       : _users = users,
         super._();
 
@@ -218,7 +218,7 @@ class _$ScheduleRoomImpl extends _ScheduleRoom {
   final String title;
   final List<User> _users;
   @override
-  @JsonKey(name: 'users')
+  @JsonKey(name: 'listParticipant')
   List<User> get users {
     if (_users is EqualUnmodifiableListView) return _users;
     // ignore: implicit_dynamic_type
@@ -266,13 +266,14 @@ class _$ScheduleRoomImpl extends _ScheduleRoom {
 
 abstract class _ScheduleRoom extends ScheduleRoom {
   const factory _ScheduleRoom(
-      @JsonKey(name: 'id') final String id,
-      @JsonKey(name: 'code') final String roomId,
-      @JsonKey(name: 'startTime') final DateTime startTime,
-      @JsonKey(name: 'endTime') final DateTime endTime,
-      @JsonKey(name: 'hostId') final int hostId,
-      {@JsonKey(name: 'title') final String title,
-      @JsonKey(name: 'users') final List<User> users}) = _$ScheduleRoomImpl;
+          @JsonKey(name: 'id') final String id,
+          @JsonKey(name: 'code') final String roomId,
+          @JsonKey(name: 'startTime') final DateTime startTime,
+          @JsonKey(name: 'endTime') final DateTime endTime,
+          @JsonKey(name: 'hostId') final int hostId,
+          {@JsonKey(name: 'title') final String title,
+          @JsonKey(name: 'listParticipant') final List<User> users}) =
+      _$ScheduleRoomImpl;
   const _ScheduleRoom._() : super._();
 
   factory _ScheduleRoom.fromJson(Map<String, dynamic> json) =
@@ -297,7 +298,7 @@ abstract class _ScheduleRoom extends ScheduleRoom {
   @JsonKey(name: 'title')
   String get title;
   @override
-  @JsonKey(name: 'users')
+  @JsonKey(name: 'listParticipant')
   List<User> get users;
   @override
   @JsonKey(ignore: true)

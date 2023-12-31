@@ -15,7 +15,7 @@ class ScheduleRoom with _$ScheduleRoom {
     @JsonKey(name: 'endTime') final DateTime endTime,
     @JsonKey(name: 'hostId') final int hostId, {
     @Default('') @JsonKey(name: 'title') final String title,
-    @Default([]) @JsonKey(name: 'users') final List<User> users,
+    @Default([]) @JsonKey(name: 'listParticipant') final List<User> users,
   }) = _ScheduleRoom;
 
   factory ScheduleRoom.fromJson(Map<String, Object?> json) =>

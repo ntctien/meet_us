@@ -14,7 +14,7 @@ _$ScheduleRoomImpl _$$ScheduleRoomImplFromJson(Map<String, dynamic> json) =>
       DateTime.parse(json['endTime'] as String),
       json['hostId'] as int,
       title: json['title'] as String? ?? '',
-      users: (json['users'] as List<dynamic>?)
+      users: (json['listParticipant'] as List<dynamic>?)
               ?.map((e) => User.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
@@ -28,5 +28,5 @@ Map<String, dynamic> _$$ScheduleRoomImplToJson(_$ScheduleRoomImpl instance) =>
       'endTime': instance.endTime.toIso8601String(),
       'hostId': instance.hostId,
       'title': instance.title,
-      'users': instance.users,
+      'listParticipant': instance.users,
     };

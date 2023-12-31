@@ -29,7 +29,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       body: GestureDetector(
         onTap: () => AppUtils.dismissFocusNode(context),
         child: Padding(
