@@ -161,6 +161,9 @@ class _CameraGridViewState extends State<CameraGridView> {
         ValueListenableBuilder<(double, double)>(
           valueListenable: _ownCameraPosition,
           builder: (context, position, child) {
+            if (widget.isShareScreen) {
+              return const SizedBox.shrink();
+            }
             return Positioned(
               left: position.$1,
               top: position.$2,
