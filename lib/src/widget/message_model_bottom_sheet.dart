@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:meet_us/src/state/message_state.dart';
+import 'package:meet_us/src/state/users_state.dart';
 import 'package:meet_us/src/widget/message_item.dart';
 import 'package:provider/provider.dart';
 
@@ -37,7 +38,11 @@ class _MessageModelBottomSheetState extends State<MessageModelBottomSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             itemCount: messages.length,
             itemBuilder: (context, index) {
+              final user = context
+                  .read<UsersState>()
+                  .users[messages[messages.length - 1 - index].userId];
               return MessageItem(
+                user: user,
                 message: messages[messages.length - 1 - index],
               );
             },

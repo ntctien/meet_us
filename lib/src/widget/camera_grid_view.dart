@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
 import 'package:meet_us/src/entity/user.dart';
 import 'package:meet_us/src/state/users_state.dart';
-import 'package:meet_us/src/utils/app_utils.dart';
 import 'package:meet_us/src/widget/camera_view.dart';
 import 'package:meet_us/src/widget/pin_camera_view.dart';
 import 'package:meet_us/src/widget/preview_share_screen_view.dart';
@@ -73,6 +72,15 @@ class _CameraGridViewState extends State<CameraGridView> {
         widget.boxConstraints.maxWidth - _cameraWidth,
         widget.boxConstraints.maxHeight - _cameraHeight
       );
+    } else if (widget.boxConstraints != oldWidget.boxConstraints) {
+      final difWidth =
+          widget.boxConstraints.maxWidth - oldWidget.boxConstraints.maxWidth;
+      final difHeight =
+          widget.boxConstraints.maxHeight - oldWidget.boxConstraints.maxHeight;
+      _ownCameraPosition.value = (
+        _ownCameraPosition.value.$1 + difWidth,
+        _ownCameraPosition.value.$2 + difHeight
+      );
     }
     _agoraUserIds.clear();
     _agoraUserIds.addAll(widget.agoraUsers.keys);
@@ -136,7 +144,7 @@ class _CameraGridViewState extends State<CameraGridView> {
                     key: Key('${agoraUser.id}'),
                     rtcEngine: widget.rtcEngine,
                     channelName: widget.channelName,
-                    displayName: AppUtils.getDisplayUserName(user),
+                    user: user,
                     agoraUser: agoraUser,
                     isLocal: false,
                     isUserSharesScreen: false,
@@ -152,18 +160,20 @@ class _CameraGridViewState extends State<CameraGridView> {
         ),
         ValueListenableBuilder<(double, double)>(
           valueListenable: _ownCameraPosition,
-          builder: (context, position, child) => Positioned(
-            left: position.$1,
-            top: position.$2,
-            child: child!,
-          ),
+          builder: (context, position, child) {
+            return Positioned(
+              left: position.$1,
+              top: position.$2,
+              child: child!,
+            );
+          },
           child: GestureDetector(
             onPanUpdate: (details) =>
                 _onPanUpdate(details, widget.boxConstraints),
             child: CameraView(
               rtcEngine: widget.rtcEngine,
               channelName: widget.channelName,
-              displayName: AppUtils.getDisplayUserName(widget.ownUser),
+              user: widget.ownUser,
               agoraUser: widget.agoraOwnUser,
               isLocal: true,
               isUserSharesScreen: widget.isShareScreen,

@@ -16,6 +16,7 @@ final _privateConstructorUsedError = UnsupportedError(
 
 /// @nodoc
 mixin _$Message {
+  int get userId => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String? get representedColorCode => throw _privateConstructorUsedError;
@@ -29,7 +30,8 @@ abstract class $MessageCopyWith<$Res> {
   factory $MessageCopyWith(Message value, $Res Function(Message) then) =
       _$MessageCopyWithImpl<$Res, Message>;
   @useResult
-  $Res call({String content, String name, String? representedColorCode});
+  $Res call(
+      {int userId, String content, String name, String? representedColorCode});
 }
 
 /// @nodoc
@@ -45,11 +47,16 @@ class _$MessageCopyWithImpl<$Res, $Val extends Message>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? userId = null,
     Object? content = null,
     Object? name = null,
     Object? representedColorCode = freezed,
   }) {
     return _then(_value.copyWith(
+      userId: null == userId
+          ? _value.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as int,
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
@@ -73,7 +80,8 @@ abstract class _$$MessageImplCopyWith<$Res> implements $MessageCopyWith<$Res> {
       __$$MessageImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String content, String name, String? representedColorCode});
+  $Res call(
+      {int userId, String content, String name, String? representedColorCode});
 }
 
 /// @nodoc
@@ -87,11 +95,16 @@ class __$$MessageImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
+    Object? userId = null,
     Object? content = null,
     Object? name = null,
     Object? representedColorCode = freezed,
   }) {
     return _then(_$MessageImpl(
+      userId: null == userId
+          ? _value.userId
+          : userId // ignore: cast_nullable_to_non_nullable
+              as int,
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
@@ -112,10 +125,13 @@ class __$$MessageImplCopyWithImpl<$Res>
 
 class _$MessageImpl implements _Message {
   const _$MessageImpl(
-      {required this.content,
+      {required this.userId,
+      required this.content,
       required this.name,
       required this.representedColorCode});
 
+  @override
+  final int userId;
   @override
   final String content;
   @override
@@ -125,7 +141,7 @@ class _$MessageImpl implements _Message {
 
   @override
   String toString() {
-    return 'Message(content: $content, name: $name, representedColorCode: $representedColorCode)';
+    return 'Message(userId: $userId, content: $content, name: $name, representedColorCode: $representedColorCode)';
   }
 
   @override
@@ -133,6 +149,7 @@ class _$MessageImpl implements _Message {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$MessageImpl &&
+            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.content, content) || other.content == content) &&
             (identical(other.name, name) || other.name == name) &&
             (identical(other.representedColorCode, representedColorCode) ||
@@ -141,7 +158,7 @@ class _$MessageImpl implements _Message {
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, content, name, representedColorCode);
+      Object.hash(runtimeType, userId, content, name, representedColorCode);
 
   @JsonKey(ignore: true)
   @override
@@ -152,10 +169,13 @@ class _$MessageImpl implements _Message {
 
 abstract class _Message implements Message {
   const factory _Message(
-      {required final String content,
+      {required final int userId,
+      required final String content,
       required final String name,
       required final String? representedColorCode}) = _$MessageImpl;
 
+  @override
+  int get userId;
   @override
   String get content;
   @override

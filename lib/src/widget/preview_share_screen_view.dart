@@ -1,5 +1,4 @@
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class PreviewShareScreenView extends StatelessWidget {
@@ -31,8 +30,7 @@ class PreviewShareScreenView extends StatelessWidget {
               sourceType: VideoSourceType.videoSourceScreenPrimary,
               renderMode: RenderModeType.renderModeFit,
             ),
-            useAndroidSurfaceView:
-                defaultTargetPlatform == TargetPlatform.android,
+            useAndroidSurfaceView: true,
           ),
         ),
       ),

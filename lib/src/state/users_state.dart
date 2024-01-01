@@ -28,6 +28,9 @@ class UsersState extends ChangeNotifier {
     HttpBaseService.baseHeaders['Authorization'] = 'Bearer $token';
     final user = await _userService.getOwnerUserInfo();
     _user = user.copyWith(token: token);
+    final mapUser = Map<int, User>.from(_users);
+    mapUser[user.id] = user;
+    _users = mapUser;
   }
 
   Future<void> resetAuthenticationState() async {
@@ -41,6 +44,9 @@ class UsersState extends ChangeNotifier {
     HttpBaseService.baseHeaders['Authorization'] = 'Bearer $token';
     final user = await _userService.getOwnerUserInfo();
     _user = user.copyWith(token: token);
+    final mapUser = Map<int, User>.from(_users);
+    mapUser[user.id] = user;
+    _users = mapUser;
     await _prefsService.setString(tokenKey, token);
     notifyListeners();
   }
@@ -59,13 +65,20 @@ class UsersState extends ChangeNotifier {
     HttpBaseService.baseHeaders['Authorization'] = 'Bearer $token';
     final user = await _userService.getOwnerUserInfo();
     _user = user.copyWith(token: token);
+    final mapUser = Map<int, User>.from(_users);
+    mapUser[user.id] = user;
+    _users = mapUser;
     await _prefsService.setString(tokenKey, token);
     notifyListeners();
   }
 
   Future<void> updateUserProfile(User user, {String? imagePath}) async {
-    await _userService.updateUserProfile(user, imagePath: imagePath);
-    _user = user;
+    final updatedUser =
+        await _userService.updateUserProfile(user, imagePath: imagePath);
+    _user = updatedUser;
+    final mapUser = Map<int, User>.from(_users);
+    mapUser[user.id] = user;
+    _users = mapUser;
     notifyListeners();
   }
 

@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:meet_us/src/entity/message.dart';
+import 'package:meet_us/src/entity/user.dart';
+import 'package:meet_us/src/utils/app_utils.dart';
 
 class MessageItem extends StatelessWidget {
-  const MessageItem({super.key, required this.message});
-
+  const MessageItem({
+    super.key,
+    required this.message,
+    this.user,
+  });
+  final User? user;
   final Message message;
 
   @override
@@ -13,18 +19,21 @@ class MessageItem extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(
-                message.representedColorCode == null
-                    ? 0xffffffff
-                    : int.parse(
-                        message.representedColorCode!.replaceAll('#', 'ff'),
-                        radix: 16,
-                      ),
+          CircleAvatar(
+            radius: 25.0,
+            backgroundColor: Color(message.representedColorCode == null
+                ? 0xffffffff
+                : int.parse(
+                    message.representedColorCode!.replaceAll('#', 'ff'),
+                    radix: 16,
+                  )),
+            foregroundImage: user == null ? null : NetworkImage(user!.avatar),
+            child: Center(
+              child: Text(
+                user == null
+                    ? message.name
+                    : AppUtils.getDisplayUserName(user, onlyFirstChar: true),
+                style: const TextStyle(color: Colors.blue),
               ),
             ),
           ),

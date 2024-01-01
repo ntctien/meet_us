@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:meet_us/src/core/enum.dart';
 import 'package:meet_us/src/entity/agora_room_info.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
-import 'package:meet_us/src/entity/request_join_room_user.dart';
 import 'package:meet_us/src/service/socket_service.dart';
 
 class StreamingState extends ChangeNotifier {
@@ -68,6 +67,8 @@ class StreamingState extends ChangeNotifier {
   //     <int, RequestJoinRoomUser>{};
   // UnmodifiableMapView<int, RequestJoinRoomUser> get requestJoinRoomUsers =>
   //     UnmodifiableMapView<int, RequestJoinRoomUser>(_requestJoinRoomUsers);
+
+  Function onUserJoined = (int id) {};
 
   Future<void> setupVideoSDKEngine(
     AgoraRoomInfo roomInfo,
@@ -274,6 +275,7 @@ class StreamingState extends ChangeNotifier {
     _agoraRoomInfo = null;
     _ownUser = _ownUser.copyWith(isCameraOn: false, isMicroOn: false);
     _pinnedUserId = null;
+    onUserJoined = (int id) {};
   }
 
   Future<void> endPreview() async {

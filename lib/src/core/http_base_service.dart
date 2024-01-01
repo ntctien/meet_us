@@ -11,7 +11,7 @@ class HttpBaseService extends AbstractRestfulService {
     String api,
     Map<String, String>? queryParameters,
   ) {
-    return Uri.https(_domain, api, queryParameters);
+    return Uri.http(_domain, api, queryParameters);
   }
 
   bool isSuccess(int statusCode) => statusCode == 200 || statusCode == 201;
@@ -31,12 +31,10 @@ class HttpBaseService extends AbstractRestfulService {
     Map<String, String>? headers,
     Map<String, String>? queryParameters,
   }) async {
-    final http.Response response = await http
-        .get(
-          _getUri(api, queryParameters),
-          headers: _getHeaders(headers),
-        )
-        .timeout(const Duration(seconds: 5));
+    final http.Response response = await http.get(
+      _getUri(api, queryParameters),
+      headers: _getHeaders(headers),
+    );
     return response;
   }
 
@@ -47,16 +45,14 @@ class HttpBaseService extends AbstractRestfulService {
     body,
     Map<String, String>? queryParameters,
   }) async {
-    final http.Response response = await http
-        .post(
-          _getUri(api, queryParameters),
-          headers: _getHeaders(
-            headers,
-            defaultHeader: <String, String>{'Content-Type': 'application/json'},
-          ),
-          body: body,
-        )
-        .timeout(const Duration(seconds: 5));
+    final http.Response response = await http.post(
+      _getUri(api, queryParameters),
+      headers: _getHeaders(
+        headers,
+        defaultHeader: <String, String>{'Content-Type': 'application/json'},
+      ),
+      body: body,
+    );
     return response;
   }
 

@@ -2,7 +2,6 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
 import 'package:meet_us/src/entity/user.dart';
-import 'package:meet_us/src/utils/app_utils.dart';
 import 'package:meet_us/src/widget/camera_view.dart';
 
 class PinCameraView extends StatelessWidget {
@@ -37,21 +36,19 @@ class PinCameraView extends StatelessWidget {
     return SizedBox(
       width: boxConstraints.maxWidth,
       height: boxConstraints.maxHeight,
-      child: Center(
-        child: CameraView(
-          key: Key('$pinnedUserId'),
-          width: boxConstraints.maxWidth * 3 / 4,
-          height: boxConstraints.maxHeight * 3 / 4,
-          rtcEngine: rtcEngine,
-          channelName: channelName,
-          displayName: AppUtils.getDisplayUserName(user),
-          agoraUser: agoraUser!,
-          isLocal: isLocal,
-          backgroundColor: Colors.grey,
-          isUserSharesScreen: false,
-          isPinned: true,
-          onPinIconTap: onPinIconTap,
-        ),
+      child: CameraView(
+        key: Key('$pinnedUserId'),
+        width: boxConstraints.maxWidth,
+        height: boxConstraints.maxHeight,
+        rtcEngine: rtcEngine,
+        channelName: channelName,
+        user: user,
+        agoraUser: agoraUser!,
+        isLocal: isLocal,
+        backgroundColor: Colors.grey,
+        isUserSharesScreen: false,
+        isPinned: true,
+        onPinIconTap: onPinIconTap,
       ),
     );
   }

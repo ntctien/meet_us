@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:http/http.dart' as http;
 import 'package:meet_us/src/core/const.dart';
 import 'package:meet_us/src/core/http_base_service.dart';
 import 'package:meet_us/src/entity/agora_room_info.dart';
@@ -77,31 +78,35 @@ class UserService extends HttpBaseService {
       _getUserByUidApi,
       queryParameters: <String, String>{'uid': '$uid'},
     );
+    final jsonResponse = jsonDecode(response.body);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final json = jsonDecode(response.body);
-      throw json['message'] ?? 'External server error';
+      throw jsonResponse['message'] ?? 'External server error';
     }
 
-    final jsonResponse = jsonDecode(response.body);
     return User.fromJson(jsonResponse);
   }
 
-  Future<void> updateUserProfile(User user, {String? imagePath}) async {
+  Future<User> updateUserProfile(User user, {String? imagePath}) async {
     final body = <String, String>{'name': user.name};
     final mediasPath = <String>[];
     if (imagePath != null) {
       mediasPath.add(imagePath);
     }
-    final response = await patchWithMedia(
+    final streamResponse = await patchWithMedia(
       _updateUserProfileApi,
       body: body,
       mediasPath: mediasPath,
     );
 
+    final response = await http.Response.fromStream(streamResponse);
+    final jsonResponse = jsonDecode(response.body);
+
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw 'External server error';
+      throw jsonResponse['message'] ?? 'External server error';
     }
+
+    return User.fromJson(jsonResponse);
   }
 
   Future<void> changePassword(

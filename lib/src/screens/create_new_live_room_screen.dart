@@ -27,14 +27,11 @@ class CreateNewLiveRoomScreen extends StatefulWidget {
 class _CreateNewLiveRoomScreenState extends State<CreateNewLiveRoomScreen> {
   final _titleKey = GlobalKey<FormState>();
   final _title = TextEditingController();
-  String _keyword = '';
-  FocusNode? _searchFocus;
   final _date = ValueNotifier<DateTime>(DateTime.now());
   final _startTime = ValueNotifier<DateTime>(DateTime.now());
   final _endTime =
       ValueNotifier<DateTime>(DateTime.now().add(const Duration(minutes: 30)));
   final _participants = ValueNotifier<Set<User>>({});
-  List<User> _lastSearchOptions = <User>[];
 
   @override
   Widget build(BuildContext context) {
@@ -125,68 +122,16 @@ class _CreateNewLiveRoomScreenState extends State<CreateNewLiveRoomScreen> {
               ],
             ),
             const Gap(16.0),
-            Autocomplete<User>(
-              optionsBuilder: _optionBuilder,
-              onSelected: _onSelected,
-              displayStringForOption: (_) => '',
-              optionsViewBuilder: (
-                context,
-                onSelected,
-                options,
-              ) {
-                return CustomAutocompleteOptionsViewBuilder<User>(
-                  displayForOption: (user) => ListTile(
-                    leading: CachedNetworkImage(
-                      imageUrl: user.avatar,
-                      fit: BoxFit.cover,
-                      height: 24,
-                      width: 24,
-                      errorWidget: (ctx, url, error) {
-                        return Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              AppUtils.getDisplayUserName(
-                                user,
-                                onlyFirstChar: true,
-                              ),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    title: Text(user.displayName),
-                  ),
-                  maxOptionsHeight: 200.0,
-                  onSelected: _onSelected,
-                  options: options,
-                );
-              },
-              fieldViewBuilder: (
-                context,
-                textEditingController,
-                focusNode,
-                onFieldSubmitted,
-              ) {
-                _searchFocus = focusNode;
-                return TextFormField(
-                  controller: textEditingController,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
-                    labelText: 'Search by name or email',
-                  ),
-                  focusNode: focusNode,
-                  onFieldSubmitted: (String value) {
-                    onFieldSubmitted();
-                  },
-                );
-              },
+            TextField(
+              readOnly: true,
+              canRequestFocus: false,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                labelText: 'Search by name or email',
+              ),
+              onTap: _onSearch,
             ),
             const Gap(16.0),
             Expanded(
@@ -259,7 +204,7 @@ class _CreateNewLiveRoomScreenState extends State<CreateNewLiveRoomScreen> {
     final date = await showDatePicker(
       context: context,
       initialDate: _date.value,
-      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       initialDatePickerMode: DatePickerMode.day,
@@ -300,23 +245,19 @@ class _CreateNewLiveRoomScreenState extends State<CreateNewLiveRoomScreen> {
     );
   }
 
-  FutureOr<Iterable<User>> _optionBuilder(
-    TextEditingValue textEditingValue,
-  ) async {
-    final userState = context.read<UsersState>();
-    _keyword = textEditingValue.text;
-    final options = await userState.searchUsersByKeyword(_keyword);
-
-    if (_keyword != textEditingValue.text) {
-      return _lastSearchOptions;
-    }
-
-    _lastSearchOptions = options;
-    return options;
+  void _onSearch() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 9 / 10,
+      ),
+      builder: (context) =>
+          _SearchParticipantBottomSheet(onSelected: _onSelected),
+    );
   }
 
   void _onSelected(User selection) {
-    _searchFocus?.unfocus();
     final users = Set<User>.from(_participants.value);
     users.add(selection);
     _participants.value = users;
@@ -378,5 +319,126 @@ class _CreateNewLiveRoomScreenState extends State<CreateNewLiveRoomScreen> {
         ),
       );
     });
+  }
+}
+
+class _SearchParticipantBottomSheet extends StatefulWidget {
+  const _SearchParticipantBottomSheet({
+    required this.onSelected,
+  });
+
+  final Function(User) onSelected;
+
+  @override
+  State<_SearchParticipantBottomSheet> createState() =>
+      _SearchParticipantBottomSheetState();
+}
+
+class _SearchParticipantBottomSheetState
+    extends State<_SearchParticipantBottomSheet> {
+  String _keyword = '';
+  List<User> _lastSearchOptions = <User>[];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24.0),
+              color: Colors.grey,
+            ),
+            clipBehavior: Clip.hardEdge,
+            margin: const EdgeInsets.symmetric(vertical: 16.0),
+            width: MediaQuery.sizeOf(context).width / 3,
+            height: 4.0,
+          ),
+          Autocomplete<User>(
+            optionsBuilder: _optionBuilder,
+            onSelected: _onSelected,
+            displayStringForOption: (_) => '',
+            optionsViewBuilder: (
+              context,
+              onSelected,
+              options,
+            ) {
+              return CustomAutocompleteOptionsViewBuilder<User>(
+                displayForOption: (user) => ListTile(
+                  leading: CachedNetworkImage(
+                    imageUrl: user.avatar,
+                    fit: BoxFit.cover,
+                    height: 24,
+                    width: 24,
+                    errorWidget: (ctx, url, error) {
+                      return Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            AppUtils.getDisplayUserName(
+                              user,
+                              onlyFirstChar: true,
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  title: Text(user.displayName),
+                ),
+                maxOptionsHeight: 250.0,
+                onSelected: _onSelected,
+                options: options,
+              );
+            },
+            fieldViewBuilder: (
+              context,
+              textEditingController,
+              focusNode,
+              onFieldSubmitted,
+            ) {
+              return TextFormField(
+                controller: textEditingController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(15.0),
+                  ),
+                  labelText: 'Search by name or email',
+                ),
+                focusNode: focusNode,
+                onFieldSubmitted: (String value) {
+                  onFieldSubmitted();
+                },
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  FutureOr<Iterable<User>> _optionBuilder(
+    TextEditingValue textEditingValue,
+  ) async {
+    final userState = context.read<UsersState>();
+    _keyword = textEditingValue.text;
+    final options = await userState.searchUsersByKeyword(_keyword);
+
+    if (_keyword != textEditingValue.text) {
+      return _lastSearchOptions;
+    }
+
+    _lastSearchOptions = options;
+    return options;
+  }
+
+  void _onSelected(User selection) {
+    widget.onSelected.call(selection);
+    context.pop();
   }
 }

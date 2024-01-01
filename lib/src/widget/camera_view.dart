@@ -4,6 +4,8 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
+import 'package:meet_us/src/entity/user.dart';
+import 'package:meet_us/src/utils/app_utils.dart';
 import 'package:meet_us/src/widget/string_extensions.dart';
 
 class CameraView extends StatefulWidget {
@@ -11,11 +13,11 @@ class CameraView extends StatefulWidget {
     super.key,
     required this.rtcEngine,
     required this.channelName,
-    required this.displayName,
     required this.agoraUser,
     required this.isLocal,
     required this.isUserSharesScreen,
     required this.isPinned,
+    this.user,
     this.width = 120.0,
     this.height = 160.0,
     this.backgroundColor,
@@ -24,7 +26,7 @@ class CameraView extends StatefulWidget {
 
   final RtcEngine rtcEngine;
   final String channelName;
-  final String displayName;
+  final User? user;
   final AgoraUser agoraUser;
   final bool isLocal;
   final bool isUserSharesScreen;
@@ -65,11 +67,15 @@ class _CameraViewState extends State<CameraView> {
                 child: !widget.agoraUser.isCameraOn || widget.isUserSharesScreen
                     ? CircleAvatar(
                         backgroundColor: Theme.of(context).primaryColor,
+                        foregroundImage: widget.user == null
+                            ? null
+                            : NetworkImage(widget.user!.avatar),
                         child: Center(
                           child: Text(
-                            widget.displayName != 'N/A'
-                                ? widget.displayName[0].toUpperCase()
-                                : widget.displayName,
+                            AppUtils.getDisplayUserName(
+                              widget.user,
+                              onlyFirstChar: true,
+                            ),
                           ),
                         ),
                       )
@@ -104,7 +110,7 @@ class _CameraViewState extends State<CameraView> {
               child: SizedBox(
                 width: widget.width - 16.0,
                 child: Text(
-                  widget.displayName.useCorrectEllipsis(),
+                  AppUtils.getDisplayUserName(widget.user).useCorrectEllipsis(),
                   style: Theme.of(context)
                       .textTheme
                       .bodySmall
@@ -125,7 +131,7 @@ class _CameraViewState extends State<CameraView> {
             ValueListenableBuilder(
               valueListenable: _togglePinIcon,
               builder: (context, visible, child) {
-                if (!visible) {
+                if (widget.isLocal || !visible) {
                   return const SizedBox.shrink();
                 }
                 return child!;
@@ -155,6 +161,9 @@ class _CameraViewState extends State<CameraView> {
   }
 
   void _onSurfaceTap() {
+    if (widget.isLocal) {
+      return;
+    }
     _togglePinIcon.value = !_togglePinIcon.value;
     if (_togglePinIcon.value) {
       _timer?.cancel();
