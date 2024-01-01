@@ -9,7 +9,7 @@ class SocketService {
   void initializeSocket(String token, String name) {
     dispose();
     _socket = io(
-        'http://$_domain',
+        'https://$_domain',
         OptionBuilder()
             .setTransports(['websocket'])
             .setExtraHeaders(<String, String>{'authorization': 'Bearer $token'})
