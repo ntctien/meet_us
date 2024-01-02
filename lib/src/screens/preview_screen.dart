@@ -2,18 +2,25 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:meet_us/src/core/enum.dart';
 import 'package:meet_us/src/entity/agora_room_info.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
 import 'package:meet_us/src/screens/streaming_screen.dart';
+import 'package:meet_us/src/state/message_state.dart';
 import 'package:meet_us/src/state/streaming_state.dart';
 import 'package:meet_us/src/state/users_state.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 class PreviewScreen extends StatefulWidget {
-  const PreviewScreen({super.key, required this.roomInfo});
+  const PreviewScreen({
+    super.key,
+    required this.roomInfo,
+    required this.isNeedRequestToJoin,
+  });
 
   final AgoraRoomInfo roomInfo;
+  final bool isNeedRequestToJoin;
 
   static const routeName = '/preview';
 
@@ -23,6 +30,7 @@ class PreviewScreen extends StatefulWidget {
 
 class _PreviewScreenState extends State<PreviewScreen> {
   bool _navigateBack = true;
+  final _loading = ValueNotifier<bool>(false);
   @override
   void initState() {
     super.initState();
@@ -33,21 +41,28 @@ class _PreviewScreenState extends State<PreviewScreen> {
   void deactivate() {
     super.deactivate();
     final streamingState = context.read<StreamingState>();
+    final messageState = context.read<MessageState>();
     if (_navigateBack) {
       streamingState.endPreview();
+      messageState.leaveRoom(widget.roomInfo.channelName);
     }
+    streamingState.onHostRepliedJoinRequest = null;
   }
 
   void _addPostFrameCallback(Duration timeStamp) async {
     final user = context.read<UsersState>().user!;
-    await context.read<StreamingState>().setupVideoSDKEngine(
-          widget.roomInfo,
-          AgoraUser(
-            id: user.id,
-            isCameraOn: false,
-            isMicroOn: false,
-          ),
-        );
+    final streamingState = context.read<StreamingState>();
+    final messageState = context.read<MessageState>();
+    await streamingState.setupVideoSDKEngine(
+      widget.roomInfo,
+      AgoraUser(
+        id: user.id,
+        isCameraOn: false,
+        isMicroOn: false,
+      ),
+    );
+    messageState.joinRoom(widget.roomInfo.channelName);
+    streamingState.onHostRepliedJoinRequest = _onHostRepliedJoinRequest;
     [Permission.camera, Permission.microphone].request().then((value) {
       final streamingState = context.read<StreamingState>();
       if (value[Permission.camera] != null) {
@@ -143,14 +158,28 @@ class _PreviewScreenState extends State<PreviewScreen> {
             ],
           ),
           const Spacer(),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              textStyle: Theme.of(context).textTheme.titleMedium,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 64.0, vertical: 16.0),
+          ValueListenableBuilder<bool>(
+            valueListenable: _loading,
+            builder: (context, loading, child) {
+              return FilledButton(
+                style: FilledButton.styleFrom(
+                  textStyle: Theme.of(context).textTheme.titleMedium,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 64.0,
+                    vertical: 16.0,
+                  ),
+                ),
+                onPressed: loading
+                    ? null
+                    : widget.isNeedRequestToJoin
+                        ? () => _onRequestToJoin(streamingState)
+                        : () => _onJoin(streamingState),
+                child: loading ? const CircularProgressIndicator() : child!,
+              );
+            },
+            child: Text(
+              widget.isNeedRequestToJoin ? 'Request Join Room' : 'Join Room',
             ),
-            onPressed: () => _onJoin(streamingState),
-            child: const Text('Join Room'),
           ),
           const Spacer(),
         ],
@@ -238,6 +267,14 @@ class _PreviewScreenState extends State<PreviewScreen> {
     }
   }
 
+  void _onRequestToJoin(StreamingState state) async {
+    _loading.value = true;
+    final status = await state.requestToJoinRoom(widget.roomInfo.channelName);
+    if (status == RequestJoinRoomStatus.approved) {
+      _onJoin(state);
+    }
+  }
+
   void _onJoin(StreamingState state) async {
     if (state.isCameraOn) {
       final isSuccess = await _onCloseVideo(state);
@@ -257,6 +294,33 @@ class _PreviewScreenState extends State<PreviewScreen> {
         StreamingScreen.routeName,
         extra: widget.roomInfo,
       );
+    }
+  }
+
+  void _onHostRepliedJoinRequest(int uid, RequestJoinRoomStatus status) {
+    final user = context.read<UsersState>().user!;
+    if (user.id == uid) {
+      switch (status) {
+        case RequestJoinRoomStatus.approved:
+          final streamingState = context.read<StreamingState>();
+          _onJoin(streamingState);
+          break;
+        case RequestJoinRoomStatus.decline:
+          _loading.value = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.red,
+              content: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text("Room's host declined your join request"),
+              ),
+            ),
+          );
+          break;
+        default:
+          return;
+      }
     }
   }
 }

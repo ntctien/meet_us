@@ -184,7 +184,13 @@ class LiveRoomModelBottomSheet extends StatelessWidget {
     DialogUtils.showLoading(context);
     userState.getAgoraRoomInfo(roomId: room.roomId).then((value) {
       DialogUtils.dismissLoading();
-      context.push(PreviewScreen.routeName, extra: value);
+      context.push(
+        PreviewScreen.routeName,
+        extra: <String, dynamic>{
+          'roomInfo': value,
+          'isNeedRequestToJoin': room.hostId != userState.user?.id
+        },
+      );
     }).onError(
       (e, _) {
         DialogUtils.dismissLoading();

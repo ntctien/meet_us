@@ -90,7 +90,10 @@ class HomeScreen extends StatelessWidget {
     DialogUtils.showLoading(context);
     userState.getAgoraRoomInfo().then((value) {
       DialogUtils.dismissLoading();
-      context.push(PreviewScreen.routeName, extra: value);
+      context.push(
+        PreviewScreen.routeName,
+        extra: <String, dynamic>{'roomInfo': value},
+      );
     }).onError((e, _) {
       DialogUtils.dismissLoading();
       ScaffoldMessenger.of(context).showSnackBar(

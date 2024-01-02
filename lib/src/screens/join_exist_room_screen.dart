@@ -86,7 +86,13 @@ class _JoinExistRoomScreenState extends State<JoinExistRoomScreen> {
     DialogUtils.showLoading(context);
     userState.getAgoraRoomInfo(roomId: _roomIdController.text).then((value) {
       DialogUtils.dismissLoading();
-      context.pushReplacement(PreviewScreen.routeName, extra: value);
+      context.pushReplacement(
+        PreviewScreen.routeName,
+        extra: <String, dynamic>{
+          'roomInfo': value,
+          'isNeedRequestToJoin': true,
+        },
+      );
     }).onError(
       (e, _) {
         DialogUtils.dismissLoading();

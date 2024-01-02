@@ -67,10 +67,16 @@ final router = GoRouter(
     GoRoute(
       path: PreviewScreen.routeName,
       builder: (context, state) {
-        final roomInfo = state.extra! as AgoraRoomInfo;
-        return PreviewScreen(roomInfo: roomInfo);
+        final map = state.extra! as Map<String, dynamic>;
+        final roomInfo = map['roomInfo']! as AgoraRoomInfo;
+        final isNeedRequestToJoin =
+            (map['isNeedRequestToJoin'] as bool?) ?? false;
+        return PreviewScreen(
+          roomInfo: roomInfo,
+          isNeedRequestToJoin: isNeedRequestToJoin,
+        );
       },
-      redirect: _streamingScreenRedirect,
+      redirect: _previewScreenRedirect,
     ),
     GoRoute(
       path: StreamingScreen.routeName,
@@ -88,6 +94,20 @@ FutureOr<String>? _authRedirect(BuildContext context, GoRouterState state) {
   if (user == null) {
     return LoginScreen.routeName;
   }
+  return null;
+}
+
+FutureOr<String>? _previewScreenRedirect(
+  BuildContext context,
+  GoRouterState state,
+) {
+  final user = context.read<UsersState>().user;
+  final map = state.extra! as Map<String, dynamic>;
+  final roomInfo = map['roomInfo'] as AgoraRoomInfo?;
+  if (user == null || roomInfo == null) {
+    return HomeScreen.routeName;
+  }
+
   return null;
 }
 

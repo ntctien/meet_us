@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meet_us/router.dart';
 import 'package:meet_us/src/core/const.dart';
+import 'package:meet_us/src/service/room_service.dart';
 import 'package:meet_us/src/state/calendar_state.dart';
 import 'package:meet_us/src/service/calendar_service.dart';
 import 'package:meet_us/src/service/socket_service.dart';
@@ -22,6 +23,7 @@ void main() async {
         Provider<SharedPreferences>(create: (_) => prefs),
         Provider<UserService>(create: (_) => UserService(domain)),
         Provider<CalendarService>(create: (_) => CalendarService(domain)),
+        Provider<RoomService>(create: (_) => RoomService(domain)),
         Provider<SocketService>(create: (_) => SocketService(domain)),
       ],
       child: MultiProvider(
@@ -36,7 +38,10 @@ void main() async {
             create: (context) => CalendarState(context.read<CalendarService>()),
           ),
           ChangeNotifierProvider<StreamingState>(
-            create: (context) => StreamingState(context.read<SocketService>()),
+            create: (context) => StreamingState(
+              context.read<SocketService>(),
+              context.read<RoomService>(),
+            ),
           ),
           ChangeNotifierProvider<MessageState>(
             create: (context) => MessageState(context.read<SocketService>()),

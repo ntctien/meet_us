@@ -28,7 +28,6 @@ class PreviewShareScreenView extends StatelessWidget {
             canvas: const VideoCanvas(
               uid: 0,
               sourceType: VideoSourceType.videoSourceScreenPrimary,
-              renderMode: RenderModeType.renderModeFit,
             ),
             useAndroidSurfaceView: true,
           ),

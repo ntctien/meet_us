@@ -33,7 +33,13 @@ class _StreamingScreenState extends State<StreamingScreen> {
         userState.getUserInfoById(id);
       }
     };
-    context.read<MessageState>().joinRoom(widget.roomInfo.channelName);
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    final messageState = context.read<MessageState>();
+    messageState.leaveRoom(widget.roomInfo.channelName);
   }
 
   @override

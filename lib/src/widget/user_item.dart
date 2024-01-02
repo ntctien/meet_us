@@ -21,6 +21,7 @@ class UserItem extends StatelessWidget {
         children: [
           CircleAvatar(
             backgroundColor: Theme.of(context).primaryColor,
+            foregroundImage: NetworkImage(user.avatar),
             child: Center(
               child: Text(
                 AppUtils.getDisplayUserName(user, onlyFirstChar: true),
@@ -30,7 +31,7 @@ class UserItem extends StatelessWidget {
           const Gap(16),
           Expanded(
             child: Text(
-              user.email,
+              user.displayName,
               style: const TextStyle(
                 color: Color.fromARGB(255, 95, 93, 93),
                 fontSize: 13,

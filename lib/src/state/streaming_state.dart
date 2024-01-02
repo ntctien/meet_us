@@ -6,12 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:meet_us/src/core/enum.dart';
 import 'package:meet_us/src/entity/agora_room_info.dart';
 import 'package:meet_us/src/entity/agora_user.dart';
+import 'package:meet_us/src/entity/request_join_user.dart';
+import 'package:meet_us/src/service/room_service.dart';
 import 'package:meet_us/src/service/socket_service.dart';
 
 class StreamingState extends ChangeNotifier {
   final SocketService _socketService;
+  final RoomService _roomService;
 
-  StreamingState(this._socketService) {
+  StreamingState(this._socketService, this._roomService) {
     _socketService.onReceiveRequestJoinRoom = _onReceiveRequestJoinRoom;
   }
 
@@ -63,12 +66,13 @@ class StreamingState extends ChangeNotifier {
   UnmodifiableMapView<int, AgoraUser> get users =>
       UnmodifiableMapView<int, AgoraUser>(_users);
 
-  // Map<int, RequestJoinRoomUser> _requestJoinRoomUsers =
-  //     <int, RequestJoinRoomUser>{};
-  // UnmodifiableMapView<int, RequestJoinRoomUser> get requestJoinRoomUsers =>
-  //     UnmodifiableMapView<int, RequestJoinRoomUser>(_requestJoinRoomUsers);
+  Map<int, RequestJoinUser> _requestJoinRoomUsers = <int, RequestJoinUser>{};
+  UnmodifiableMapView<int, RequestJoinUser> get requestJoinRoomUsers =>
+      UnmodifiableMapView<int, RequestJoinUser>(_requestJoinRoomUsers);
 
-  Function onUserJoined = (int id) {};
+  Function(int id)? onUserJoined;
+
+  Function(int id, RequestJoinRoomStatus status)? onHostRepliedJoinRequest;
 
   Future<void> setupVideoSDKEngine(
     AgoraRoomInfo roomInfo,
@@ -210,29 +214,32 @@ class StreamingState extends ChangeNotifier {
     }
   }
 
-  void _onReceiveRequestJoinRoom(dynamic value) {
-    // final userId = value['uid']! as int;
-    // final statusString = (value['status'] as String?) ?? '';
-    // RequestJoinRoomStatus status = RequestJoinRoomStatus.unknown;
-    // switch (statusString) {
-    //   case 'APPROVED':
-    //     status = RequestJoinRoomStatus.approved;
-    //     break;
-    //   case 'WAITING':
-    //     status = RequestJoinRoomStatus.waiting;
-    //     break;
-    //   case 'DECLINE':
-    //     status = RequestJoinRoomStatus.decline;
-    //     break;
-    // }
-    // final requestUser = RequestJoinRoomUser(
-    //   id: userId,
-    //   requestJoinRoomStatus: status,
-    // );
-    // final mapUser = Map<int, RequestJoinRoomUser>.from(_requestJoinRoomUsers);
-    // mapUser[requestUser.id] = requestUser;
-    // _requestJoinRoomUsers = mapUser;
-    // notifyListeners();
+  void _onReceiveRequestJoinRoom(dynamic value) async {
+    if (_agoraRoomInfo == null) {
+      return;
+    }
+    if (onHostRepliedJoinRequest != null) {
+      final uid = value['uid'] as int;
+      final statusString = value['status'] as String;
+      RequestJoinRoomStatus status = RequestJoinRoomStatus.unknown;
+      switch (statusString) {
+        case 'APPROVE':
+          status = RequestJoinRoomStatus.approved;
+          break;
+        case 'WAITING':
+          status = RequestJoinRoomStatus.waiting;
+          break;
+        case 'DECLINE':
+          status = RequestJoinRoomStatus.decline;
+          break;
+      }
+      onHostRepliedJoinRequest?.call(uid, status);
+    }
+    final users =
+        await _roomService.getRequestJoinRoomUsers(_agoraRoomInfo!.channelName);
+    final mapUsers = {for (final element in users) element.userId: element};
+    _requestJoinRoomUsers = mapUsers;
+    notifyListeners();
   }
 
   Future<void> joinRoom() async {
@@ -275,7 +282,8 @@ class StreamingState extends ChangeNotifier {
     _agoraRoomInfo = null;
     _ownUser = _ownUser.copyWith(isCameraOn: false, isMicroOn: false);
     _pinnedUserId = null;
-    onUserJoined = (int id) {};
+    onUserJoined = null;
+    onHostRepliedJoinRequest = null;
   }
 
   Future<void> endPreview() async {
@@ -316,9 +324,9 @@ class StreamingState extends ChangeNotifier {
     if (_agoraEngine == null || _isShareScreen) {
       return;
     }
-    await _agoraEngine!.enableLocalVideo(true);
     await _agoraEngine!
         .updateChannelMediaOptions(_videoCallChannelMediaOptions);
+    await _agoraEngine!.enableLocalVideo(true);
     _ownUser = _ownUser.copyWith(isCameraOn: true);
     notifyListeners();
   }
@@ -333,7 +341,7 @@ class StreamingState extends ChangeNotifier {
   }
 
   Future<void> onOpenMicrophone() async {
-    if (_agoraEngine == null) {
+    if (_agoraEngine == null || _isShareScreen) {
       return;
     }
     await _agoraEngine!.enableLocalAudio(true);
@@ -354,9 +362,11 @@ class StreamingState extends ChangeNotifier {
     if (_agoraEngine == null) {
       return;
     }
+    await _agoraEngine!
+        .updateChannelMediaOptions(_shareScreenChannelMediaOptions);
     await _agoraEngine!.startScreenCapture(
       const ScreenCaptureParameters2(
-        captureAudio: true,
+        captureAudio: false,
         audioParams: ScreenAudioParameters(
           sampleRate: 16000,
           channels: 2,
@@ -370,8 +380,6 @@ class StreamingState extends ChangeNotifier {
         ),
       ),
     );
-    await _agoraEngine!
-        .updateChannelMediaOptions(_shareScreenChannelMediaOptions);
     await onCloseCamera();
   }
 
@@ -390,5 +398,13 @@ class StreamingState extends ChangeNotifier {
   void unPinUser(AgoraUser user) {
     _pinnedUserId = null;
     notifyListeners();
+  }
+
+  Future<RequestJoinRoomStatus> requestToJoinRoom(String code) {
+    return _roomService.requestJoinRoom(code);
+  }
+
+  Future<void> replyJoinRequest(String code, int userId, bool acceptance) {
+    return _roomService.replyJoinRequest(code, userId, acceptance);
   }
 }
